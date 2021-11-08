@@ -1,0 +1,57 @@
+<kendo-grid
+[data]="view"
+[height]="533"
+[pageSize]="gridState.take"
+[skip]="gridState.skip"
+[sort]="gridState.sort"
+[pageable]="true"
+[sortable]="true"
+(dataStateChange)="onStateChange($event)"
+(edit)="editHandler($event)"
+(cancel)="cancelHandler($event)"
+(save)="saveHandler($event)"
+(remove)="removeHandler($event)"
+(add)="addHandler($event)"
+[navigable]="true"
+>
+<ng-template kendoGridToolbarTemplate>
+  <button kendoGridAddCommand>Add new</button>
+</ng-template>
+<kendo-grid-column
+  field="name"
+  editor="string"
+  title="Name"
+></kendo-grid-column>
+<kendo-grid-column
+  field="address"
+  editor="string"
+  title="Address"
+></kendo-grid-column>
+<kendo-grid-column
+  field="age"
+  editor="string"
+  title="Age"
+></kendo-grid-column>
+<kendo-grid-column
+  field="dateOfBirth"
+  editor="date"
+  title="Date of birth"
+></kendo-grid-column>
+<kendo-grid-column
+  field="mobileNumber"
+  editor="string"
+  title="Mobile Number"
+></kendo-grid-column>
+<kendo-grid-command-column title="command" width="220">
+  <ng-template kendoGridCellTemplate let-isNew="isNew">
+    <button kendoGridEditCommand [primary]="true">Edit</button>
+    <button kendoGridRemoveCommand>Remove</button>
+    <button kendoGridSaveCommand [disabled]="formGroup?.invalid">
+      {{ isNew ? "Add" : "Update" }}
+    </button>
+    <button kendoGridCancelCommand>
+      {{ isNew ? "Discard changes" : "Cancel" }}
+    </button>
+  </ng-template>
+</kendo-grid-command-column>
+</kendo-grid>
