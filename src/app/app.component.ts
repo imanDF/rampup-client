@@ -1,4 +1,4 @@
-import { Observable, Subscription } from 'rxjs';
+import { Observable, Subscription, BehaviorSubject } from 'rxjs';
 import { Component, OnInit, Inject, OnDestroy } from '@angular/core';
 import { FormGroup, FormControl, Validators } from '@angular/forms';
 
@@ -10,15 +10,21 @@ import { EditService } from './edit.service';
 
 import { map } from 'rxjs/operators';
 import { Apollo, gql } from 'apollo-angular';
+import moment from 'moment';
 
+import {NotificationService} from '@progress/kendo-angular-notification'
 @Component({
   selector: 'my-app',
   templateUrl: './app.component.html',
 })
 export class AppComponent implements OnInit, OnDestroy {
   loading: boolean;
-  posts: any;
+  selectedStudent: any;
+  refreshStudents = new BehaviorSubject<boolean>(true);
+  fileName = '';
+  excelFile:any;
   private querySubscription: Subscription;
+  private editedRowIndex: number;
 
   public view: Observable<GridDataResult>;
   public gridState: State = {
@@ -27,23 +33,32 @@ export class AppComponent implements OnInit, OnDestroy {
     take: 10,
   };
   public formGroup: FormGroup;
+  public opened = false;
 
-  private editedRowIndex: number;
-
-  constructor(private editService: EditService, private apollo: Apollo) {}
+  constructor(private editService: EditService, private apollo: Apollo,private notificationService: NotificationService) {}
 
   public ngOnInit(): void {
-    this.querySubscription = this.editService
-      .read()
-      .subscribe(({ data, loading }) => {
-        this.loading = loading;
-        this.view = data.getAllStudents;
-      });
+    this.initLoad();
   }
-
+  private initLoad(){
+    this.querySubscription = this.editService
+    .read()
+    .subscribe(({ data, loading }) => {
+      this.loading = loading;
+      this.view = data.getAllStudents.map((item) => {
+        const nowDate = moment();
+        const dob = moment(item.dateOfBirth, 'YYYY');
+        let updatedItem = {
+          ...item,
+          age: nowDate.diff(dob, 'years'),
+        };
+        return updatedItem;
+      });
+    });
+  }
+  
   public onStateChange(state: State) {
     this.gridState = state;
-    // this.editService.read();
   }
 
   public addHandler({ sender }) {
@@ -51,27 +66,24 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.formGroup = new FormGroup({
       name: new FormControl(),
-      age: new FormControl('', Validators.required),
       address: new FormControl(0),
-      dateOfBirth: new FormControl(),
+      gender: new FormControl(),
+      dateOfBirth: new FormControl(new Date()),
       mobileNumber: new FormControl(),
+      age: new FormControl('22'),
     });
-    console.log(this.formGroup, '!!@#@!#!#!#!@#');
     sender.addRow(this.formGroup);
   }
 
   public editHandler({ sender, rowIndex, dataItem }) {
     this.closeEditor(sender);
-    console.log(sender, 'sender');
-    console.log(rowIndex, 'rowIndex');
-    console.log(dataItem, 'dataItem');
     this.formGroup = new FormGroup({
       id: new FormControl(dataItem.id),
       name: new FormControl(dataItem.name),
+      age: new FormControl(''),
       gender: new FormControl(dataItem.gender),
-      age: new FormControl(dataItem.age),
       address: new FormControl(dataItem.address),
-      dateOfBirth: new FormControl(dataItem.dateOfBirth),
+      dateOfBirth: new FormControl(new Date(dataItem.dateOfBirth)),
       mobileNumber: new FormControl(dataItem.mobileNumber),
     });
 
@@ -85,19 +97,58 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   public saveHandler({ sender, rowIndex, formGroup, isNew }) {
-    const product: Product = formGroup.value;
-    console.log(product, '1231321312233131');
-    // this.editService.save(product, isNew);
+    let updatedObj = {
+      ...formGroup.value,
+      dateOfBirth: moment(formGroup.value.dateOfBirth).format('YYYY-MM-DD'),
+    };
+    let product: Product = updatedObj;
     this.editService.save(product, isNew);
     sender.closeRow(rowIndex);
   }
 
-  public removeHandler({ dataItem }) {}
+  public removeHandler() {
+    let dataItem = this.selectedStudent;
+    this.opened = true;
+    this.editService.delete(dataItem.id);
+  }
 
   private closeEditor(grid, rowIndex = this.editedRowIndex) {
     grid.closeRow(rowIndex);
     this.editedRowIndex = undefined;
     this.formGroup = undefined;
+  }
+
+  public openRemoveDialog({ dataItem }) {
+    this.opened = true;
+    this.selectedStudent = dataItem;
+  }
+
+  public close(status) {
+    if (status === 'yes') {
+      this.removeHandler();
+      this.notificationService.show({
+        content: "Student removed Successfully!",
+        hideAfter: 2000,
+        position: { horizontal: "center", vertical: "top" },
+        animation: { type: "fade", duration: 400 },
+        type: { style: "success", icon: true },
+        });
+    }
+    this.opened = false;
+    this.initLoad();
+  }
+
+  public handleFileInput(file:Event)
+  {
+    this.excelFile = file
+  }
+
+  public submitFile()
+  {
+    this.editService.sendChat('hello');
+    const formData = new FormData();
+    formData.append('file',this.excelFile);
+    this.editService.addExcel(formData).subscribe();
   }
 
   ngOnDestroy() {

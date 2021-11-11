@@ -4,25 +4,9 @@ import { HttpClient } from '@angular/common/http';
 
 import { tap, map } from 'rxjs/operators';
 import { Apollo, gql } from 'apollo-angular';
+import { Socket } from 'ngx-socket-io';
 
-const CREATE_ACTION = 'create';
-const UPDATE_ACTION = 'update';
-const REMOVE_ACTION = 'destroy';
-
-// const UPDATE_STUDENT = gql`
-// mutation {
-//   updateStudent(
-//   	student:{
-//       $studentDetails
-//     }
-//   )
-//   {
-//     name
-//   }
-// }
-// `;
-
-const GET_POST = gql`
+const GET_STUDENTS = gql`
   query {
     getAllStudents {
       id
@@ -35,44 +19,99 @@ const GET_POST = gql`
     }
   }
 `;
-@Injectable()
+const REMOVE_STUDENT = gql`
+  mutation ($id: String!) {
+    removeStudent(id: $id) {
+      name
+    }
+  }
+`;
+const UPDATE_STUDENT = gql`
+  mutation ($student: StudentUpdateDTO!) {
+    updateStudent(student: $student) {
+      name
+    }
+  }
+`;
+const CREATE_STUDENT = gql`
+  mutation ($student: StudentCreateDTO!) {
+    createStudent(student: $student) {
+      name
+    }
+  }
+`;
+@Injectable({
+  providedIn: 'root',
+})
 export class EditService {
-  constructor(private apollo: Apollo, private http: HttpClient) {}
+  constructor(
+    private apollo: Apollo,
+    private http: HttpClient,
+    private socket: Socket
+  ) {}
 
   private data: any[] = [];
 
   public read() {
     return this.apollo.watchQuery<any>({
-      query: GET_POST,
+      query: GET_STUDENTS,
     }).valueChanges;
   }
 
   public save(data: any, isNew?: boolean) {
-    if (isNew) {
-    } else {
-      this.apollo.mutate({
-        mutation: gql`
-            mutation {
-              updateStudent(
-                student:{
-                    id:${data.id},
-                    name:${data.name},
-                    age:${data.age},
-                    address: ${data.address},
-                    mobileNumber: ${data.mobileNumber},
-                    dateOfBirth: ${data.dateOfBirth},
-                    gender:${data.gender}
-                }
-              )
-              {
-                name
-              }
-            }
-            `,
-      });
+    try {
+      if (isNew) {
+        this.apollo
+          .mutate({
+            mutation: CREATE_STUDENT,
+            variables: { student: data },
+          })
+          .subscribe();
+      } else {
+        this.apollo
+          .mutate({
+            mutation: UPDATE_STUDENT,
+            variables: { student: data },
+          })
+          .subscribe();
+      }
+    } catch (error) {
+      console.log(error, 'error');
+      throw new Error(error);
     }
   }
 
+  public delete(id: string) {
+    try {
+      this.apollo
+        .mutate({
+          mutation: REMOVE_STUDENT,
+          variables: { id },
+        })
+        .subscribe();
+    } catch (error) {
+      console.log(error, 'error');
+      throw new Error(error);
+    }
+  }
+
+  public addExcel(file) {
+    try {
+      return this.http.post('http://localhost:4000', file);
+    } catch (error) {
+      console.log(error, 'error');
+      throw new Error(error);
+    }
+  }
+  sendChat(message) {
+    this.socket.emit('notification', message);
+  }
+  receiveChat() {
+    return this.socket.fromEvent('chat');
+  }
+  getUsers() {
+    return this.socket.fromEvent('users');
+  }
   private reset() {
     this.data = [];
   }

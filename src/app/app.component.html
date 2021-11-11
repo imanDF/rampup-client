@@ -10,17 +10,23 @@
 (edit)="editHandler($event)"
 (cancel)="cancelHandler($event)"
 (save)="saveHandler($event)"
-(remove)="removeHandler($event)"
+(remove)="openRemoveDialog($event)"
 (add)="addHandler($event)"
 [navigable]="true"
 >
 <ng-template kendoGridToolbarTemplate>
   <button kendoGridAddCommand>Add new</button>
 </ng-template>
+
 <kendo-grid-column
   field="name"
   editor="string"
   title="Name"
+></kendo-grid-column>
+<kendo-grid-column
+  field="gender"
+  editor="string"
+  title="Gender"
 ></kendo-grid-column>
 <kendo-grid-column
   field="address"
@@ -31,6 +37,7 @@
   field="age"
   editor="string"
   title="Age"
+  locked="true"
 ></kendo-grid-column>
 <kendo-grid-column
   field="dateOfBirth"
@@ -42,7 +49,7 @@
   editor="string"
   title="Mobile Number"
 ></kendo-grid-column>
-<kendo-grid-command-column title="command" width="220">
+<kendo-grid-command-column title="" width="220">
   <ng-template kendoGridCellTemplate let-isNew="isNew">
     <button kendoGridEditCommand [primary]="true">Edit</button>
     <button kendoGridRemoveCommand>Remove</button>
@@ -55,3 +62,26 @@
   </ng-template>
 </kendo-grid-command-column>
 </kendo-grid>
+<div class="form-group">
+  <input type="file"
+         id="file"
+         (change)="handleFileInput($event.target.files[0])">
+         <button (click)="submitFile()">
+          Submit
+        </button>
+</div>
+    <kendo-dialog
+      title="Please confirm"
+      *ngIf="opened"
+      (close)="close('cancel')"
+      [minWidth]="250"
+      [width]="450"
+    >
+      <p style="margin: 30px; text-align: center;">
+        Are you sure you want to continue?
+      </p>
+      <kendo-dialog-actions>
+        <button kendoButton (click)="close('no')">No</button>
+        <button kendoButton (click)="close('yes')" primary="true">Yes</button>
+      </kendo-dialog-actions>
+    </kendo-dialog>
