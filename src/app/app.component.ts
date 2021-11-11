@@ -23,6 +23,7 @@ export class AppComponent implements OnInit, OnDestroy {
   refreshStudents = new BehaviorSubject<boolean>(true);
   fileName = '';
   excelFile:any;
+  responseNotification:any;
   private querySubscription: Subscription;
   private editedRowIndex: number;
 
@@ -39,6 +40,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
   public ngOnInit(): void {
     this.initLoad();
+  this.editService.listen('notification').subscribe((data) => {
+    console.log(data);
+  })
   }
   private initLoad(){
     this.querySubscription = this.editService

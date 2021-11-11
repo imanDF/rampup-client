@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, Subscriber } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 
 import { tap, map } from 'rxjs/operators';
 import { Apollo, gql } from 'apollo-angular';
 import { Socket } from 'ngx-socket-io';
+import io from 'socket.io-client';
 
 const GET_STUDENTS = gql`
   query {
@@ -44,11 +45,15 @@ const CREATE_STUDENT = gql`
   providedIn: 'root',
 })
 export class EditService {
+  readonly uri:string = "ws://localhost:3001";
+  sockt:any;
   constructor(
     private apollo: Apollo,
     private http: HttpClient,
     private socket: Socket
-  ) {}
+  ) {
+    this.sockt = io(this.uri);
+  }
 
   private data: any[] = [];
 
@@ -56,6 +61,15 @@ export class EditService {
     return this.apollo.watchQuery<any>({
       query: GET_STUDENTS,
     }).valueChanges;
+  }
+
+
+  listen(eventName:string){
+    return new Observable((subscriber) => {
+      this.sockt.on(eventName,(data)=> {
+        subscriber.next(data);
+      })
+    })
   }
 
   public save(data: any, isNew?: boolean) {
@@ -107,7 +121,7 @@ export class EditService {
     this.socket.emit('notification', message);
   }
   receiveChat() {
-    return this.socket.fromEvent('chat');
+    return this.socket.fromEvent('notification').pipe(map((data) => console.log(data,"DARTATAS")));
   }
   getUsers() {
     return this.socket.fromEvent('users');
