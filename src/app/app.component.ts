@@ -24,6 +24,7 @@ export class AppComponent implements OnInit, OnDestroy {
   fileName = '';
   excelFile: any;
   responseNotification: any;
+
   private querySubscription: Subscription;
   private editedRowIndex: number;
 
@@ -116,14 +117,52 @@ export class AppComponent implements OnInit, OnDestroy {
       dateOfBirth: moment(formGroup.value.dateOfBirth).format('YYYY-MM-DD'),
     };
     let product: Product = updatedObj;
-    this.editService.save(product, isNew);
+    this.editService.save(product, isNew).subscribe(
+      (res: any) => {
+        this.notificationService.show({
+          content: isNew ? 'Added Successfully' : 'Updated Successfully',
+          hideAfter: 2000,
+          position: { horizontal: 'center', vertical: 'top' },
+          animation: { type: 'fade', duration: 400 },
+          type: { style: 'success', icon: true },
+        });
+      },
+      (error) => {
+        this.notificationService.show({
+          content: isNew ? 'Failed to add' : 'Failed to update',
+          hideAfter: 2000,
+          position: { horizontal: 'center', vertical: 'top' },
+          animation: { type: 'fade', duration: 400 },
+          type: { style: 'success', icon: true },
+        });
+      }
+    );
     sender.closeRow(rowIndex);
   }
 
   public removeHandler() {
     let dataItem = this.selectedStudent;
     this.opened = true;
-    this.editService.delete(dataItem.id);
+    this.editService.delete(dataItem.id).subscribe(
+      (res: any) => {
+        this.notificationService.show({
+          content: `Removed Successfully`,
+          hideAfter: 2000,
+          position: { horizontal: 'center', vertical: 'top' },
+          animation: { type: 'fade', duration: 400 },
+          type: { style: 'success', icon: true },
+        });
+      },
+      (error) => {
+        this.notificationService.show({
+          content: `Failed to remove Student`,
+          hideAfter: 2000,
+          position: { horizontal: 'center', vertical: 'top' },
+          animation: { type: 'fade', duration: 400 },
+          type: { style: 'success', icon: true },
+        });
+      }
+    );
   }
 
   private closeEditor(grid, rowIndex = this.editedRowIndex) {
@@ -140,13 +179,6 @@ export class AppComponent implements OnInit, OnDestroy {
   public close(status) {
     if (status === 'yes') {
       this.removeHandler();
-      this.notificationService.show({
-        content: 'Student removed Successfully!',
-        hideAfter: 2000,
-        position: { horizontal: 'center', vertical: 'top' },
-        animation: { type: 'fade', duration: 400 },
-        type: { style: 'success', icon: true },
-      });
     }
     this.opened = false;
     this.initLoad();

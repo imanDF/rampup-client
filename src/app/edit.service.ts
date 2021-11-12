@@ -75,19 +75,17 @@ export class EditService {
   public save(data: any, isNew?: boolean) {
     try {
       if (isNew) {
-        this.apollo
+        return this.apollo
           .mutate({
             mutation: CREATE_STUDENT,
             variables: { student: data },
           })
-          .subscribe();
       } else {
-        this.apollo
+        return this.apollo
           .mutate({
             mutation: UPDATE_STUDENT,
             variables: { student: data },
           })
-          .subscribe();
       }
     } catch (error) {
       console.log(error, 'error');
@@ -97,12 +95,11 @@ export class EditService {
 
   public delete(id: string) {
     try {
-      this.apollo
+      return this.apollo
         .mutate({
           mutation: REMOVE_STUDENT,
           variables: { id },
-        })
-        .subscribe();
+        });
     } catch (error) {
       console.log(error, 'error');
       throw new Error(error);
