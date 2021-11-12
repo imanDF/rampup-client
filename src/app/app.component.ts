@@ -12,7 +12,7 @@ import { map } from 'rxjs/operators';
 import { Apollo, gql } from 'apollo-angular';
 import moment from 'moment';
 
-import {NotificationService} from '@progress/kendo-angular-notification'
+import { NotificationService } from '@progress/kendo-angular-notification';
 @Component({
   selector: 'my-app',
   templateUrl: './app.component.html',
@@ -22,8 +22,8 @@ export class AppComponent implements OnInit, OnDestroy {
   selectedStudent: any;
   refreshStudents = new BehaviorSubject<boolean>(true);
   fileName = '';
-  excelFile:any;
-  responseNotification:any;
+  excelFile: any;
+  responseNotification: any;
   private querySubscription: Subscription;
   private editedRowIndex: number;
 
@@ -36,31 +36,41 @@ export class AppComponent implements OnInit, OnDestroy {
   public formGroup: FormGroup;
   public opened = false;
 
-  constructor(private editService: EditService, private apollo: Apollo,private notificationService: NotificationService) {}
+  constructor(
+    private editService: EditService,
+    private apollo: Apollo,
+    private notificationService: NotificationService
+  ) {}
 
   public ngOnInit(): void {
     this.initLoad();
-  this.editService.listen('notification').subscribe((data) => {
-    console.log(data);
-  })
-  }
-  private initLoad(){
-    this.querySubscription = this.editService
-    .read()
-    .subscribe(({ data, loading }) => {
-      this.loading = loading;
-      this.view = data.getAllStudents.map((item) => {
-        const nowDate = moment();
-        const dob = moment(item.dateOfBirth, 'YYYY');
-        let updatedItem = {
-          ...item,
-          age: nowDate.diff(dob, 'years'),
-        };
-        return updatedItem;
+    this.editService.listen('notification').subscribe((data) => {
+      this.notificationService.show({
+        content: `${data}`,
+        hideAfter: 2000,
+        position: { horizontal: 'center', vertical: 'top' },
+        animation: { type: 'fade', duration: 400 },
+        type: { style: 'success', icon: true },
       });
     });
   }
-  
+  private initLoad() {
+    this.querySubscription = this.editService
+      .read()
+      .subscribe(({ data, loading }) => {
+        this.loading = loading;
+        this.view = data.getAllStudents.map((item) => {
+          const nowDate = moment();
+          const dob = moment(item.dateOfBirth, 'YYYY');
+          let updatedItem = {
+            ...item,
+            age: nowDate.diff(dob, 'years'),
+          };
+          return updatedItem;
+        });
+      });
+  }
+
   public onStateChange(state: State) {
     this.gridState = state;
   }
@@ -131,27 +141,24 @@ export class AppComponent implements OnInit, OnDestroy {
     if (status === 'yes') {
       this.removeHandler();
       this.notificationService.show({
-        content: "Student removed Successfully!",
+        content: 'Student removed Successfully!',
         hideAfter: 2000,
-        position: { horizontal: "center", vertical: "top" },
-        animation: { type: "fade", duration: 400 },
-        type: { style: "success", icon: true },
-        });
+        position: { horizontal: 'center', vertical: 'top' },
+        animation: { type: 'fade', duration: 400 },
+        type: { style: 'success', icon: true },
+      });
     }
     this.opened = false;
     this.initLoad();
   }
 
-  public handleFileInput(file:Event)
-  {
-    this.excelFile = file
+  public handleFileInput(file: Event) {
+    this.excelFile = file;
   }
 
-  public submitFile()
-  {
-    this.editService.sendChat('hello');
+  public submitFile() {
     const formData = new FormData();
-    formData.append('file',this.excelFile);
+    formData.append('file', this.excelFile);
     this.editService.addExcel(formData).subscribe();
   }
 

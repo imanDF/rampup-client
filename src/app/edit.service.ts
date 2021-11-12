@@ -117,15 +117,6 @@ export class EditService {
       throw new Error(error);
     }
   }
-  sendChat(message) {
-    this.socket.emit('notification', message);
-  }
-  receiveChat() {
-    return this.socket.fromEvent('notification').pipe(map((data) => console.log(data,"DARTATAS")));
-  }
-  getUsers() {
-    return this.socket.fromEvent('users');
-  }
   private reset() {
     this.data = [];
   }
